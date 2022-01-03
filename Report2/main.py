@@ -12,8 +12,11 @@ opt = input.parse_txt("dataset/s-set/s1-label.pa")
 centers = input.parse_txt("dataset/s-set/s1-cb.txt")
 
 #Computing geometric decomposition coreset
-geo = agc.Coreset(data, 15, 0.50, 0.5, False)
-coreset = geo.compute()
+geo = agc.Coreset(15, 0.50, 0.5, True)
+coreset = geo.mpc_compute(data, 8, 0)
+print(len(coreset))
+print(coreset)
+print(np.sum(coreset[:,2]))
 
 @utils.timeit
 def test_no_coreset():
