@@ -104,7 +104,7 @@ class Coreset:
         return coreset
 
     def mpc_compute(self, data, machines, seed=0, sample_size=10):
-        np.random.seed(self, seed=100)
+        np.random.seed(seed=100)
         random.seed(seed)
 
         round_timings = []

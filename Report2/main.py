@@ -13,14 +13,15 @@ from sklearn.cluster import KMeans
 output_data = pd.DataFrame([], columns=["SamplingMethod", "DatasetType", "NrOfPoints", "Seed", "SampleSize", "TotalTime", "RoundTimes", "CoresetSize", "Quality"])
 row_counter = 0  # keep track of row in dataframe
 
-epsilon = 1/16
+epsilon = 1/2
 a = 0.5
 machines = 8
-seeds = [100, 101, 102, 103, 104]
+seeds = [] # [100, 101, 102, 103, 104]
 sample_sizes = []  # TODO: to be determined
 
 # TODO: dataset generation
 datasets = [] # or set of filenames
+
 
 for seed in seeds:
     for dataset in datasets:
@@ -28,14 +29,18 @@ for seed in seeds:
         dataset = np.append(dataset, np.ones(len(dataset)).reshape(len(dataset), 1), axis=1)
         centers = 0  # TODO: obtain number of centers/clusters for each dataset
 
-        # TODO: apply kmeans on original dataset
+        # kmeans
+        kmeans = KMeans(n_clusters=centers, init='k-means++', random_state=seed, max_iter=50)  # TODO: max_iter?
+
+        # run kmeans on original/complete data
+        kmeans_cluster = kmeans.fit(X=dataset[:, 0:2], sample_weight=dataset[:, 2])
 
         # Run grid sampling
         geo = agc.Coreset(centers, epsilon, a, True)
-        coreset, total_time, round_times = geo.mpc_compute(dataset, machines, seed)
-        # TODO: - Run kmeans on coreset
-        #       - Compare quality against original kmeans centroid position
-        output_data.loc[row_counter] = ["Grid", "dataset type", "n", seed, 0, total_time, round_times, len(coreset),
+        grid_coreset, total_time, round_times = geo.mpc_compute(dataset, machines, seed)
+        grid_cluster = kmeans.fit(X=grid_coreset[:, 0:2], sample_weight=grid_coreset[:, 2])
+        # TODO: - Compare quality against original kmeans centroid position
+        output_data.loc[row_counter] = ["Grid", "dataset type", "n", seed, 0, total_time, round_times, len(grid_coreset),
                                         "quality"]  # TODO: Fill dataset type, n and quality variables
         output_data.to_csv("output_data.csv", index=False)
         row_counter += 1
@@ -43,14 +48,17 @@ for seed in seeds:
         for sample_size in sample_sizes:
             # Run ball sampling
             geo = agc.Coreset(centers, epsilon, a, False)
-            coreset, total_time, round_times = geo.mpc_compute(dataset, machines, seed)
-            # TODO: - Run kmeans on coreset
-            #       - Compare quality against original kmeans centroid position
-            output_data.loc[row_counter] = ["Grid", "dataset type", "n", seed, 0, total_time, round_times, len(coreset)
-                                            "quality"]  # TODO: Fill dataset type, n and quality variables
+            ball_coreset, total_time, round_times = geo.mpc_compute(dataset, machines, seed)
+            ball_cluster = kmeans.fit(X=ball_coreset[:, 0:2], sample_weight=ball_coreset[:, 2])
+            # TODO: - Compare quality against original kmeans centroid position
+            output_data.loc[row_counter] = ["Grid", "dataset type", "n", seed, 0, total_time, round_times, len(ball_coreset), "quality"]  # TODO: Fill dataset type, n and quality variables
             output_data.to_csv("output_data.csv", index=False)
             row_counter += 1
 
+#plt.scatter(kmeans_cluster.cluster_centers_[:,0], kmeans_cluster.cluster_centers_[:, 1], s=0.5)
+#plt.scatter(grid_cluster.cluster_centers_[:,0], grid_cluster.cluster_centers_[:, 1], s=0.5)
+#plt.scatter(ball_cluster.cluster_centers_[:, 0], ball_cluster.cluster_centers_[:, 1], s=0.5)
+#plt.show()
 
 '''
 @utils.timeit
