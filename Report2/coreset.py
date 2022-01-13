@@ -19,7 +19,7 @@ class Coreset:
 
         # distance vector between each point and center
         distances = [np.sqrt(np.power(points[:, 0:2] - center, 2).sum(axis=1)) for center in centers]
-        cost = np.sum([point[2] * np.sqrt(np.sum(np.power(point[0:2] - centers, 2))) for point in points])
+        cost = np.sum([point[2] * np.sqrt(np.sum(np.power(point[0:2] - centers, 2))) for point in points]) / len(centers)
         levels = int(np.ceil(np.log(len(points)) * np.log(self.a * np.log(len(points)))))
         radius = np.sqrt(cost / (self.a * np.log(len(points)) * len(points)))
 
@@ -28,7 +28,7 @@ class Coreset:
         for i in range(levels):
             # stop if there are no points left
             if len(points) == 0:
-                print("Stopping at level", i, "out of", levels)
+                #print("Stopping at level", i, "out of", levels)
                 break
 
             # per level remove/sample points per center
@@ -51,6 +51,8 @@ class Coreset:
                     # loop over each cell
                     for x_i in range(len(x_range) - 1):
                         for y_i in range(len(y_range) - 1):
+                            #if len(points) - len(annulus_subset)  < len(centers):
+                            #    break
                             subset = annulus_subset[
                                 (annulus_subset[:, 0] > x_range[x_i]) & (annulus_subset[:, 0] < x_range[x_i + 1]) & (
                                         annulus_subset[:, 1] > y_range[y_i]) & (
@@ -63,8 +65,9 @@ class Coreset:
 
                 # annulus sampling
                 else:
-                    sample_size_current = annulus_subset.shape[0] if sample_size > annulus_subset.shape[
-                        0] else sample_size
+                    sample_size_current = annulus_subset.shape[0] if sample_size > annulus_subset.shape[0] else sample_size
+                    #if len(points) - sample_size_current < len(centers):
+                    #    sample_size_current = len(points) - len(centers)
                     if sample_size_current == 0:  # skip in case no points in annulus
                         continue
                     index_subset = np.random.choice(annulus_subset.shape[0], int(sample_size_current), replace=False)
@@ -80,7 +83,7 @@ class Coreset:
 
             # increment radius
             last_radius = current_radius
-            current_radius = np.power(2, i + 1) * radius
+            current_radius = 2 * radius
 
         # add all points to the coreset which are left
         coreset = np.append(coreset, points, axis=0)  # TODO: Check
@@ -133,8 +136,8 @@ class Coreset:
                                                         .map(lambda x: self.compute(x, seed, sample_size)).collect()
 
             if len(coreset_sets) == 1:
-                print("Finished mpc coreset computation in", iterations, "rounds\nFinal coreset contains",
-                      len(coreset_sets[0]), "points")
+                #print("Finished mpc coreset computation in", iterations, "rounds\nFinal coreset contains",
+                #      len(coreset_sets[0]), "points")
                 round_timings.append(round(time.time() - round_start_time, 2))
                 total_time = round(time.time() - start_time, 2)
 
