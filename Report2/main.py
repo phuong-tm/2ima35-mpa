@@ -1,3 +1,5 @@
+import math
+
 import coreset as agc
 import data_generation as generator
 import matplotlib.pyplot as plt
@@ -40,6 +42,8 @@ datasets = generator.load_datasets()
 for seed in seeds:
     print("seed", seed)
     for datasetType, (dataset, label) in datasets:
+        if datasetType != 'Aniso' and len(dataset) != 50000:
+                continue
         print(datasetType, len(dataset))
         figure1, axis1 = plt.subplots()
         figure2, axis2 = plt.subplots()
@@ -82,7 +86,7 @@ for seed in seeds:
         for i in range(len(sample_sizes)):
             # Run ball sampling
             geo = agc.Coreset(centers, epsilon, a, False)
-            ball_coreset, total_time, round_times = geo.mpc_compute(dataset, machines, seed)
+            ball_coreset, total_time, round_times = geo.mpc_compute(dataset, machines, seed, math.ceil(sample_sizes[i]))
             ball_cluster = kmeans.fit(X=ball_coreset[:, 0:2], sample_weight=ball_coreset[:, 2])
             ball_centroids = ball_cluster.cluster_centers_
             axis1.scatter(ball_centroids[:, 0], ball_centroids[:, 1], c=colors[i])
